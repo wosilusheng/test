@@ -49,7 +49,7 @@ public class CounterController {
   }
 
   @GetMapping(value = "/api/hello")
-  ApiResponse get() {
+  ApiResponse getHello() {
     logger.info("/api/hello get request");
 
 
