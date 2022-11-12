@@ -1,22 +1,20 @@
 package com.tencent.wxcloudrun.controller;
 
+import com.tencent.wxcloudrun.config.ApiResponse;
+import com.tencent.wxcloudrun.dto.CounterRequest;
+import com.tencent.wxcloudrun.model.Counter;
+import com.tencent.wxcloudrun.service.CounterService;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.tencent.wxcloudrun.config.ApiResponse;
-import com.tencent.wxcloudrun.dto.CounterRequest;
-import com.tencent.wxcloudrun.model.Counter;
-import com.tencent.wxcloudrun.service.CounterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URL;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.List;
+import java.util.*;
 
 /**
  * counter控制器
@@ -28,6 +26,9 @@ public class CounterController {
     final CounterService counterService;
     final Logger logger;
     OkHttpClient notFollowRedirectsClient;
+    List<String> urls = Arrays.asList("https://v95-sz.douyinvod.com;https://v26.douyinvod.com;https://v11.douyinvod.com;https://v3-z.douyinvod.com;https://v6-x.douyinvod.com;https://v5-g.douyinvod.com;https://v5-i.douyinvod.com;https://v3.douyinvod.com;https://v5-e.douyinvod.com;https://v95.douyinvod.com;https://v5-j.douyinvod.com;https://v9-traffic.douyinvod.com;https://v9.douyinvod.com;https://v3-x.douyinvod.com;https://v6.douyinvod.com;https://v95-sh.douyinvod.com;https://v1.douyinvod.com;https://v11-x.douyinvod.com;https://v3-y.douyinvod.com;https://v5-f.douyinvod.com;https://v95-p.douyinvod.com;https://v27.douyinvod.com;https://v95-hb.douyinvod.com;https://v5-h.douyinvod.com;https://v5.douyinvod.com;https://v27-a.douyinvod.com;https://v83-016.douyinvod.com;https://v95-hn.douyinvod.com;https://v95-zj.douyinvod.com;https://v95-sz-cold.douyinvod.com".split(";"));
+
+    Set<String> needAddUrls = new HashSet<>();
 
     public CounterController(@Autowired CounterService counterService) {
         this.counterService = counterService;
@@ -63,6 +64,12 @@ public class CounterController {
         return ApiResponse.ok("hello world");
     }
 
+    @GetMapping(value = "/api/needAddUrls")
+    ApiResponse getNeedAddUrls() {
+        logger.info("/api/needAddUrls  request");
+        return ApiResponse.ok(needAddUrls);
+    }
+
     @GetMapping(value = "/api/redirection")
     ApiResponse redirection(@RequestParam(required = false, defaultValue = "") String url) {
         logger.info("/api/redirection get url:" + url);
@@ -79,8 +86,15 @@ public class CounterController {
             Headers headers = response.headers();
             if (code == 302 && headers != null) {
                 String location = headers.get("Location");
+                String authority = new URL(location).getAuthority();
+                String tempUrl = "https://" + authority;
+                if (!urls.contains(tempUrl)) {
+                    logger.error("url:" + tempUrl + "没有收藏");
+                    needAddUrls.add(tempUrl);
+                }
                 return ApiResponse.ok(location);
             }
+
             response.close();
         } catch (Exception e) {
             e.printStackTrace();
