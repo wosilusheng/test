@@ -107,6 +107,7 @@ public class CounterController {
                             logger.error("url:" + tempUrl + "没有收藏");
                             needAddUrls.add(tempUrl);
                         }
+                        logger.info("/api/redirection result:" + resultUrl);
                         return ApiResponse.ok(resultUrl);
                     }
                 }
