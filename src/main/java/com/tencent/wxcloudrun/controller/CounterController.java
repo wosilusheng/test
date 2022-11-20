@@ -4,15 +4,17 @@ import com.tencent.wxcloudrun.config.ApiResponse;
 import com.tencent.wxcloudrun.dto.CounterRequest;
 import com.tencent.wxcloudrun.model.Counter;
 import com.tencent.wxcloudrun.service.CounterService;
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
 import java.net.URL;
 import java.util.*;
 
@@ -26,7 +28,8 @@ public class CounterController {
     final CounterService counterService;
     final Logger logger;
     OkHttpClient notFollowRedirectsClient;
-    List<String> urls = Arrays.asList("https://v95-sz.douyinvod.com;https://v26.douyinvod.com;https://v11.douyinvod.com;https://v3-z.douyinvod.com;https://v6-x.douyinvod.com;https://v5-g.douyinvod.com;https://v5-i.douyinvod.com;https://v3.douyinvod.com;https://v5-e.douyinvod.com;https://v95.douyinvod.com;https://v5-j.douyinvod.com;https://v9-traffic.douyinvod.com;https://v9.douyinvod.com;https://v3-x.douyinvod.com;https://v6.douyinvod.com;https://v95-sh.douyinvod.com;https://v1.douyinvod.com;https://v11-x.douyinvod.com;https://v3-y.douyinvod.com;https://v5-f.douyinvod.com;https://v95-p.douyinvod.com;https://v27.douyinvod.com;https://v95-hb.douyinvod.com;https://v5-h.douyinvod.com;https://v5.douyinvod.com;https://v27-a.douyinvod.com;https://v83-016.douyinvod.com;https://v95-hn.douyinvod.com;https://v95-zj.douyinvod.com;https://v95-sz-cold.douyinvod.com".split(";"));
+    OkHttpClient client;
+    List<String> urls = Arrays.asList("https://v3-dy-o.zjcdn.com;https://v95-sz.douyinvod.com;https://v26.douyinvod.com;https://v11.douyinvod.com;https://v3-z.douyinvod.com;https://v6-x.douyinvod.com;https://v5-g.douyinvod.com;https://v5-i.douyinvod.com;https://v3.douyinvod.com;https://v5-e.douyinvod.com;https://v95.douyinvod.com;https://v5-j.douyinvod.com;https://v9-traffic.douyinvod.com;https://v9.douyinvod.com;https://v3-x.douyinvod.com;https://v6.douyinvod.com;https://v95-sh.douyinvod.com;https://v1.douyinvod.com;https://v11-x.douyinvod.com;https://v3-y.douyinvod.com;https://v5-f.douyinvod.com;https://v95-p.douyinvod.com;https://v27.douyinvod.com;https://v95-hb.douyinvod.com;https://v5-h.douyinvod.com;https://v5.douyinvod.com;https://v27-a.douyinvod.com;https://v83-016.douyinvod.com;https://v95-hn.douyinvod.com;https://v95-zj.douyinvod.com;https://v95-sz-cold.douyinvod.com".split(";"));
 
     Set<String> needAddUrls = new HashSet<>();
 
@@ -35,6 +38,8 @@ public class CounterController {
         this.logger = LoggerFactory.getLogger(CounterController.class);
         this.notFollowRedirectsClient = new OkHttpClient().newBuilder()
                 .followRedirects(false)
+                .build();
+        this.client = new OkHttpClient().newBuilder()
                 .build();
     }
 
@@ -72,6 +77,53 @@ public class CounterController {
 
     @GetMapping(value = "/api/redirection")
     ApiResponse redirection(@RequestParam(required = false, defaultValue = "") String url) {
+        logger.info("/api/redirection get url:" + url);
+        if (url == null || url.isEmpty()) {
+            return ApiResponse.error("参数有问题");
+        }
+        Response response = null;
+        try {
+            FormBody formBody = new FormBody.Builder()
+                    .add("f", "true")
+                    .add("w", url)
+                    .build();
+            Request request = new Request.Builder()
+                    .header("referer", "https://redirectdetective.com/")
+                    .url("https://redirectdetective.com/ld.px")
+                    .post(formBody)
+                    .build();
+            response = client.newCall(request).execute();
+            int code = response.code();
+            if (code == 200) {
+                String string = response.body().string();
+                int index = string.lastIndexOf("https://");
+                if (index != -1) {
+                    int endIndex = string.indexOf("</a>", index);
+                    if (endIndex > index) {
+                        String resultUrl = string.substring(index, endIndex).trim();
+                        String authority = new URL(resultUrl).getAuthority();
+                        String tempUrl = "https://" + authority;
+                        if (!urls.contains(tempUrl)) {
+                            logger.error("url:" + tempUrl + "没有收藏");
+                            needAddUrls.add(tempUrl);
+                        }
+                        return ApiResponse.ok(resultUrl);
+                    }
+                }
+            }
+            response.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+        return ApiResponse.error("解析失败");
+    }
+
+    @GetMapping(value = "/api/redirection2")
+    ApiResponse redirection2(@RequestParam(required = false, defaultValue = "") String url) {
         logger.info("/api/redirection get url:" + url);
         if (url == null || url.isEmpty()) {
             return ApiResponse.error("参数有问题");
