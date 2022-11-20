@@ -27,7 +27,7 @@ public class CounterController {
 
     final CounterService counterService;
     final Logger logger;
-    OkHttpClient notFollowRedirectsClient;
+//    OkHttpClient notFollowRedirectsClient;
     OkHttpClient client;
     List<String> urls = Arrays.asList("https://v3-dy-o.zjcdn.com;https://v95-sz.douyinvod.com;https://v26.douyinvod.com;https://v11.douyinvod.com;https://v3-z.douyinvod.com;https://v6-x.douyinvod.com;https://v5-g.douyinvod.com;https://v5-i.douyinvod.com;https://v3.douyinvod.com;https://v5-e.douyinvod.com;https://v95.douyinvod.com;https://v5-j.douyinvod.com;https://v9-traffic.douyinvod.com;https://v9.douyinvod.com;https://v3-x.douyinvod.com;https://v6.douyinvod.com;https://v95-sh.douyinvod.com;https://v1.douyinvod.com;https://v11-x.douyinvod.com;https://v3-y.douyinvod.com;https://v5-f.douyinvod.com;https://v95-p.douyinvod.com;https://v27.douyinvod.com;https://v95-hb.douyinvod.com;https://v5-h.douyinvod.com;https://v5.douyinvod.com;https://v27-a.douyinvod.com;https://v83-016.douyinvod.com;https://v95-hn.douyinvod.com;https://v95-zj.douyinvod.com;https://v95-sz-cold.douyinvod.com".split(";"));
 
@@ -36,9 +36,9 @@ public class CounterController {
     public CounterController(@Autowired CounterService counterService) {
         this.counterService = counterService;
         this.logger = LoggerFactory.getLogger(CounterController.class);
-        this.notFollowRedirectsClient = new OkHttpClient().newBuilder()
-                .followRedirects(false)
-                .build();
+//        this.notFollowRedirectsClient = new OkHttpClient().newBuilder()
+//                .followRedirects(false)
+//                .build();
         this.client = new OkHttpClient().newBuilder()
                 .build();
     }
@@ -123,41 +123,41 @@ public class CounterController {
         return ApiResponse.error("解析失败");
     }
 
-    @GetMapping(value = "/api/redirection2")
-    ApiResponse redirection2(@RequestParam(required = false, defaultValue = "") String url) {
-        logger.info("/api/redirection get url:" + url);
-        if (url == null || url.isEmpty()) {
-            return ApiResponse.error("参数有问题");
-        }
-        Response response = null;
-        try {
-            Request request = new Request.Builder()
-                    .url(url)
-                    .build();
-            response = notFollowRedirectsClient.newCall(request).execute();
-            int code = response.code();
-            Headers headers = response.headers();
-            if (code == 302 && headers != null) {
-                String location = headers.get("Location");
-                String authority = new URL(location).getAuthority();
-                String tempUrl = "https://" + authority;
-                if (!urls.contains(tempUrl)) {
-                    logger.error("url:" + tempUrl + "没有收藏");
-                    needAddUrls.add(tempUrl);
-                }
-                return ApiResponse.ok(location);
-            }
-
-            response.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (response != null) {
-                response.close();
-            }
-        }
-        return ApiResponse.error("解析失败");
-    }
+//    @GetMapping(value = "/api/redirection2")
+//    ApiResponse redirection2(@RequestParam(required = false, defaultValue = "") String url) {
+//        logger.info("/api/redirection get url:" + url);
+//        if (url == null || url.isEmpty()) {
+//            return ApiResponse.error("参数有问题");
+//        }
+//        Response response = null;
+//        try {
+//            Request request = new Request.Builder()
+//                    .url(url)
+//                    .build();
+//            response = notFollowRedirectsClient.newCall(request).execute();
+//            int code = response.code();
+//            Headers headers = response.headers();
+//            if (code == 302 && headers != null) {
+//                String location = headers.get("Location");
+//                String authority = new URL(location).getAuthority();
+//                String tempUrl = "https://" + authority;
+//                if (!urls.contains(tempUrl)) {
+//                    logger.error("url:" + tempUrl + "没有收藏");
+//                    needAddUrls.add(tempUrl);
+//                }
+//                return ApiResponse.ok(location);
+//            }
+//
+//            response.close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (response != null) {
+//                response.close();
+//            }
+//        }
+//        return ApiResponse.error("解析失败");
+//    }
 
 
     /**
